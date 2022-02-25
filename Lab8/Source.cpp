@@ -97,6 +97,12 @@ void fillMasFromTxtFile(const char filename[], RaggedArray mas, int& cols)
 	fclose(f);
 }
 
+void freeMas(RaggedArray mas)
+{
+	for (int i = 0; i < mas.rows; i++)
+		free(mas.data[i]);
+	free(mas.data);
+}
 
 int main()
 {
@@ -125,6 +131,7 @@ int main()
 		break;
 	}
 
+	freeMas(mas);
 
 	return 0;
 }
