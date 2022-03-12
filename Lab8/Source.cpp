@@ -5,14 +5,23 @@
 struct RaggedArray
 {
 	int** data = NULL;
-	int rows = 0;
+	int rows = NULL;
 };
 
 int askUserScan()
 {
 	int choise = 0;
 	do {
-		printf("Введите:\n1 - заполнить массив рандомно\n2 - заполнить массив из файла txt\n3 - заполнить массив из файла bin\nВыбор:");
+		printf("Введите способ записи:\n1 - заполнить массив рандомно\n2 - заполнить массив из файла txt\n3 - заполнить массив из файла bin\nВыбор:");
+		scanf_s("%d", &choise);
+	} while (choise > 3 || choise < 1);
+	return choise;
+}
+int askUserPrint()
+{
+	int choise = 0;
+	do {
+		printf("Введите способ вывода:\n1 - в консоль\n2 - в файл txt\n3 - в файл bin\nВыбор:");
 		scanf_s("%d", &choise);
 	} while (choise > 3 || choise < 1);
 	return choise;
@@ -27,7 +36,6 @@ int scanRowsSize()
 	} while (choise > 1000 || choise < 0);
 	return choise;
 }
-
 int scanColsSize()
 {
 	int choise = 0;
@@ -62,6 +70,42 @@ void fillMasRandom(RaggedArray mas)
 			mas.data[i][j] = rand() % 100;
 }
 
+void fillMasFromTxtFile(const char* filename, RaggedArray mas, int& cols)
+{
+	FILE* f;
+	if (fopen_s(&f, filename, "r") != 0)
+		exit(1);
+
+	fscanf_s(f, "%d\n", &mas.rows);
+	mas.data = (int**)malloc(sizeof(int*) * mas.rows);
+	for (int i = 0; i < mas.rows; i++)
+	{
+		fscanf_s(f, "%d", &cols);
+		mas.data[i] = (int*)malloc(sizeof(int) * (cols + 1));
+		for (int j = 0; j < cols; j++)
+			mas.data[i][j] = 0;
+		mas.data[i][cols] = TERMINAL_VALUE;
+	}
+	for (int i = 0; i < mas.rows; i++)
+		for (int j = 0; mas.data[i][j] != TERMINAL_VALUE; j++)
+			fscanf_s(f, "%d ", &mas.data[i][j]);
+
+	printf("\n");
+	for (int i = 0; i < mas.rows; i++)
+	{
+		for (int j = 0; mas.data[i][j] != TERMINAL_VALUE; j++)
+			printf("%5d", mas.data[i][j]);
+		printf("\n");
+	}
+
+	fclose(f);
+}
+
+//void fillMasFromBinFile(const char* filename, RaggedArray mas, int& cols)
+//{
+//
+//}
+
 void outputMasToScreen(RaggedArray mas)
 {
 	printf("\n");
@@ -73,29 +117,17 @@ void outputMasToScreen(RaggedArray mas)
 	}
 }
 
-void fillMasFromTxtFile(const char filename[], RaggedArray mas, int& cols)
-{
-	FILE* f;
-	if (fopen_s(&f, filename, "r") != 0)
-		exit(1);
-
-	fscanf_s(f, "%d\n", &mas.rows);
-	mas.data = (int**)malloc(sizeof(int*) * mas.rows);
-	for (int i = 0; i < mas.rows; i++)
-	{
-		fscanf_s(f, "%d\n", &cols);
-		mas.data[i] = (int*)malloc(sizeof(int) * (cols + 1));
-		for (int j = 0; j < cols; j++)
-			mas.data[i][j] = 0;
-		mas.data[i][cols] = TERMINAL_VALUE;
-	}
-	for (int i = 0; i < mas.rows; i++)
-		for (int j = 0; mas.data[i][j] != TERMINAL_VALUE; j++)
-			fscanf_s(f, "%d ", &mas.data[i][j]);
-
-
-	fclose(f);
-}
+//void writeMasToTxtFile(const char* filename, RaggedArray mas, int cols)
+//{
+//	FILE* f;
+//	if (fopen_s(&f, filename, "w") != 0)
+//		exit(1);
+//
+//	fprintf_s(f, "%d", cols);
+//
+//
+//	fclose(f);
+//}
 
 void freeMas(RaggedArray mas)
 {
@@ -119,15 +151,27 @@ int main()
 	{
 		mas.rows = scanRowsSize();
 		mas.data = allocateMas(mas);
-
 		fillMasRandom(mas);
-		outputMasToScreen(mas);
 		break;
 	}
 	case 2:
+	{
 		int cols;
 		fillMasFromTxtFile("1.txt", mas, cols);
+		break;
+	}
+	case 3:
+		break;
+	}
+
+	switch (askUserPrint())
+	{
+	case 1:
 		outputMasToScreen(mas);
+		break;
+	case 2:
+		int cols;
+		//writeMasToTxtFile("1.txt", mas, cols);
 		break;
 	}
 
