@@ -1,10 +1,15 @@
-#include <iostream>
+#include<iostream>
 
 /*Задание:
 Массив представляется указателем на вектор указателей на строки.
 Количество строк определяется терминальным символом.
 Количество элементов строки определяется терминальным символом.
 Память выделяется одним блоком.*/
+
+struct RaggedArray
+{
+	int** data = NULL;
+};
 
 int askUserScan()
 {
@@ -25,49 +30,11 @@ int askUserSave()
 	return choice;
 }
 
-float** mallocArray(float** mas)
-{
-	mas = (float**)malloc(sizeof(float*));
-	if (mas == NULL)
-	{
-		printf("Неудалось выделить память!");
-		exit(1);
-	}
-	return mas;
-}
-float** reallocArray(float** mas, int rows)
-{
-	mas = (float**)realloc(mas, sizeof(float*) * (rows + 1));
-	if (mas == NULL)
-	{
-		printf("Неудалось выделить память!");
-		exit(1);
-	}
-	mas[rows] = NULL;
-	return mas;
-}
-void mallocArrayForArray(float** mas, int rows, int cols)
-{
-	mas[rows] = (float*)malloc(sizeof(float) * (cols + 1));
-	if (mas[rows] == NULL)
-	{
-		printf("Неудалось выделить память!");
-		exit(1);
-	}
-	mas[rows][cols] = NULL;
-}
-void freeArray(float** mas)
-{
-	for (int rows = 0; mas[rows] != NULL; rows++)
-		free(mas[rows]);
-	free(mas);
-}
-
 int scanRowsSize()
 {
 	int choice = 0;
 	do {
-		printf("Введите количество строк [0;1000]:\n");
+		printf("Введите количество строк (0;1000]:\n");
 		scanf_s("%d", &choice);
 	} while (choice > 1000 || choice < 0);
 	return choice;
@@ -84,129 +51,103 @@ int scanColsSize()
 	return choice;
 }
 
-void printArray(float** mas)
+int** allocateArray(RaggedArray mas)
 {
-	printf("\nМассив:\n");
-	for (int rows = 0; mas[rows]!=NULL; rows++)
+	int rows = scanRowsSize();
+	mas.data = (int**)malloc(sizeof(int*) * (rows + 1));
+	mas.data[rows] = NULL;
+
+	printf("Введите количество столбцов (0;1000]:\n");
+	for (int i = 0; mas.data[i] != NULL; i++)
 	{
-		for (int col = 0; mas[rows][col] != NULL; col++)
-			printf("%6.1f", mas[rows][col]);
+		int cols = scanColsSize();
+		mas.data[i] = (int*)malloc(sizeof(int) * (cols + 1));
+		mas.data[i][cols] = NULL;
+	}
+	return mas.data;
+}
+
+void fillArrayRandom(RaggedArray mas)
+{
+	for (int i = 0; mas.data[i] != NULL; i++)
+		for (int j = 0; mas.data[i][j] != NULL; j++)
+			mas.data[i][j] = rand() % 501;
+}
+
+void outputArrayToScreen(RaggedArray mas)
+{
+	printf("\n");
+	for (int i = 0; mas.data[i] != NULL; i++)
+	{
+		for (int j = 0; mas.data[i][j] != NULL; j++)
+			printf("%5d", mas.data[i][j]);
 		printf("\n");
 	}
 	printf("\n");
 }
 
-void fillArrayRandomly(float** mas)
+void fillArrayFromTxtFile(const char* filename, RaggedArray mas)
 {
-	int cols;
-	for (int rows = 0; mas[rows] != NULL; rows++)
-	{
-		cols = scanColsSize();	
-		mallocArrayForArray(mas, rows, cols);
-
-		for (int col = 0; mas[rows][col] != NULL; col++)
-			mas[rows][col] = (rand() % 2001 - 1000.0) / 10;
-	}
-}
-
-float** fillArrayFromTxtFile(float** mas, char* filename)
-{
-	FILE* f;
-	if (fopen_s(&f, filename, "r") != NULL)
-		exit(1);
-
 	int rows = 0, cols = 0;
-	int pos = ftell(f);
-	while (!feof(f))
+
+	FILE* f;
+	if (fopen_s(&f, filename, "r") != 0) exit(1);
+
+	fscanf_s(f, "%d", &rows);
+	mas.data = (int**)malloc(sizeof(int*) * (rows + 1));
+	mas.data[rows] = NULL;
+
+	for (int i = 0; mas.data[i] != NULL; i++)
 	{
-		char currentChar = fgetc(f);
-		if (currentChar == '.')
-			cols++;
-		if (currentChar == '\n')
-		{
-			mas = reallocArray(mas, rows + 1);
-			mas[rows] = (float*)malloc(sizeof(float) * (cols + 1));
+		fscanf_s(f, "%d", &cols);
 
-			fseek(f, pos, SEEK_SET);
-			for (int col = 0; col < cols; col++)
-				fscanf_s(f, "%f", &mas[rows][col]);
-			fscanf_s(f, "\n");
-			pos = ftell(f);
+		mas.data[i] = (int*)malloc(sizeof(int) * (cols + 1));
+		mas.data[i][cols] = NULL;
 
-			mas[rows][cols] = NULL;
-			cols = 0;
-			rows++;
-		}
+		for (int j = 0; mas.data[i][j] != NULL; j++)
+			fscanf_s(f, "%d", &mas.data[i][j]);
 	}
+
 	fclose(f);
-
-	return mas;
 }
 
-float** fillArrayFromBinFile(float** mas, char* filename)
+void writeArrayToTxtFile(const char* filename, RaggedArray mas)
 {
 	FILE* f;
-	if (fopen_s(&f, filename, "rb") != NULL)
-		exit(1);
+	if (fopen_s(&f, filename, "w") != 0) exit(1);
 
-	int rows = 0, cols = 0;
-	mas = reallocArray(mas, rows);
-	float value;
-	while (!feof(f))
+	int rows = 0;
+	while (mas.data[rows] != NULL) rows++;
+
+	fprintf(f, "%d\n", rows);
+
+	for (int i = 0; mas.data[i] != NULL; i++)
 	{
-		fread(&value, sizeof(float), 1, f);
-		if (value == NULL)
-		{
-			rows++;
-			mas = reallocArray(mas, rows);
-			cols = 0;
-		}
-		else
-		{
-			mas[rows] = (float*)realloc(mas[rows], sizeof(float) * (cols + 2));
-			mas[rows][cols++] = value;
-			mas[rows][cols] = NULL;
-		}
-	}
-	return mas;
-}
-
-void writeArrayToTxtFile(float** mas, char* filename)
-{
-	FILE* f;
-	if (fopen_s(&f, filename, "w") != NULL)
-		exit(1);
-
-	for (int row = 0; mas[row] != NULL; row++)
-	{
-		for (int col = 0; mas[row][col] != NULL; col++)
-			fprintf(f, "%6.1f", mas[row][col]);
+		int cols = 0;
+		while (mas.data[i][cols] != NULL) cols++;
+		fprintf(f, "%d ", cols);
+		for (int j = 0; mas.data[i][j] != NULL; j++)
+			fprintf(f, "%d ", mas.data[i][j]);
 		fprintf(f, "\n");
 	}
+
+	fclose(f);
 }
 
-void writeArrayToBinFile(float** mas, char* filename)
+void freeArray(RaggedArray mas)
 {
-	FILE* f;
-	if (fopen_s(&f, filename, "wb") != NULL)
-		exit(1);
-	
-	for (int row = 0; mas[row] != NULL; row++)
-	{
-		int col = 0;
-		while (mas[row][col] != NULL)
-			fwrite(&mas[row][col++], sizeof(float), 1, f);
-		fwrite(&mas[row][col], sizeof(float), 1, f);
-	}
+	for (int i = 0; mas.data[i] != NULL; i++)
+		free(mas.data[i]);
+	free(mas.data);
 }
 
 int main()
 {
 	system("chcp 1251"); system("cls");
-	srand(time(NULL));
+	srand(time(0));
 
-	float** mas = NULL;
-	mas = mallocArray(mas);
+	RaggedArray mas;
+	
 	char filenameTxt[] = "1.txt";
 	char filenameBin[] = "2.bin";
 
@@ -214,32 +155,28 @@ int main()
 	{
 	case 1:
 	{
-		int rows = scanRowsSize();
-		mas = reallocArray(mas, rows);
-		fillArrayRandomly(mas);
+		mas.data = allocateArray(mas);
+		fillArrayRandom(mas);
 		break;
 	}
 	case 2:
-	{
-		mas = fillArrayFromTxtFile(mas, filenameTxt);
+		fillArrayFromTxtFile(filenameTxt, mas);
 		break;
-	}
 	case 3:
-	{
-		mas = fillArrayFromBinFile(mas, filenameBin);
 		break;
-	}
 	}
 
-	printArray(mas);
+	outputArrayToScreen(mas);
 
 	switch (askUserSave())
 	{
 	case 1:
-		writeArrayToTxtFile(mas, filenameTxt);
+	{
+		writeArrayToTxtFile(filenameTxt, mas);
 		break;
+	}
 	case 2:
-		writeArrayToBinFile(mas, filenameBin);
+
 		break;
 	}
 
