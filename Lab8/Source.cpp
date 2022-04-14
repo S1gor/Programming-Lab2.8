@@ -24,9 +24,9 @@ int askUserSave()
 {
 	int choice = 0;
 	do {
-		printf("Введите способ сохранения:\n1 - в файл txt\n2 - в файл bin\nВыбор:");
+		printf("Введите способ сохранения:\n1 - в файл txt\n2 - в файл bin\n3 - выйти\nВыбор:");
 		scanf_s("%d", &choice);
-	} while (choice > 2 || choice < 1);
+	} while (choice > 3 || choice < 1);
 	return choice;
 }
 
@@ -74,19 +74,7 @@ void fillArrayRandom(RaggedArray mas)
 			mas.data[i][j] = rand() % 501;
 }
 
-void outputArrayToScreen(RaggedArray mas)
-{
-	printf("\n");
-	for (int i = 0; mas.data[i] != NULL; i++)
-	{
-		for (int j = 0; mas.data[i][j] != NULL; j++)
-			printf("%5d", mas.data[i][j]);
-		printf("\n");
-	}
-	printf("\n");
-}
-
-void fillArrayFromTxtFile(const char* filename, RaggedArray mas)
+int** fillArrayFromTxtFile(const char* filename, RaggedArray mas)
 {
 	int rows = 0, cols = 0;
 
@@ -107,6 +95,7 @@ void fillArrayFromTxtFile(const char* filename, RaggedArray mas)
 		for (int j = 0; mas.data[i][j] != NULL; j++)
 			fscanf_s(f, "%d", &mas.data[i][j]);
 	}
+	return mas.data;
 
 	fclose(f);
 }
@@ -134,6 +123,63 @@ void writeArrayToTxtFile(const char* filename, RaggedArray mas)
 	fclose(f);
 }
 
+int** fillArrayFromBinFile(const char* filename, RaggedArray mas)
+{
+	int rows = 0, cols = 0;
+
+	FILE* f;
+	if (fopen_s(&f, filename, "rb") != 0) exit(1);
+
+	fread(&rows, sizeof(int), 1, f);
+	mas.data = (int**)malloc(sizeof(int*) * (rows + 1));
+	mas.data[rows] = NULL;
+
+	for (int i = 0; mas.data[i] != NULL; i++)
+	{
+		fread(&cols, sizeof(int), 1, f);
+		mas.data[i] = (int*)malloc(sizeof(int) * (cols + 1));
+		mas.data[i][cols] = NULL;
+
+		fread(mas.data[i], sizeof(int), cols, f);
+	}
+	return mas.data;
+
+	fclose(f);
+}
+
+void writeArrayToBinFile(const char* filename, RaggedArray mas)
+{
+	int rows = 0;
+	FILE* f;
+	if (fopen_s(&f, filename, "wb") != 0) exit(1);
+
+	while (mas.data[rows] != NULL) rows++;
+
+	fwrite(&rows, sizeof(int), 1, f);
+
+	for (int i = 0; mas.data[i] != NULL; i++)
+	{
+		int cols = 0;
+		while (mas.data[i][cols] != NULL) cols++;
+		fwrite(&cols, sizeof(int), 1, f);
+		fwrite(mas.data[i], sizeof(int), cols, f);
+	}
+
+	fclose(f);
+}
+
+void outputArrayToScreen(RaggedArray mas)
+{
+	printf("\n");
+	for (int i = 0; mas.data[i] != NULL; i++)
+	{
+		for (int j = 0; mas.data[i][j] != NULL; j++)
+			printf("%5d", mas.data[i][j]);
+		printf("\n");
+	}
+	printf("\n");
+}
+
 void freeArray(RaggedArray mas)
 {
 	for (int i = 0; mas.data[i] != NULL; i++)
@@ -154,15 +200,14 @@ int main()
 	switch (askUserScan())
 	{
 	case 1:
-	{
 		mas.data = allocateArray(mas);
 		fillArrayRandom(mas);
 		break;
-	}
 	case 2:
-		fillArrayFromTxtFile(filenameTxt, mas);
+		mas.data = fillArrayFromTxtFile(filenameTxt, mas);
 		break;
 	case 3:
+		mas.data = fillArrayFromBinFile(filenameBin, mas);
 		break;
 	}
 
@@ -171,13 +216,13 @@ int main()
 	switch (askUserSave())
 	{
 	case 1:
-	{
 		writeArrayToTxtFile(filenameTxt, mas);
 		break;
-	}
 	case 2:
-
+		writeArrayToBinFile(filenameBin, mas);
 		break;
+	case 3:
+		exit(0);
 	}
 
 	freeArray(mas);
