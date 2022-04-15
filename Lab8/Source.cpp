@@ -74,7 +74,7 @@ void fillArrayRandom(RaggedArray mas)
 			mas.data[i][j] = rand() % 501;
 }
 
-int** fillArrayFromTxtFile(const char* filename, RaggedArray mas)
+void fillArrayFromTxtFile(const char* filename, RaggedArray& mas)
 {
 	int rows = 0, cols = 0;
 
@@ -95,7 +95,6 @@ int** fillArrayFromTxtFile(const char* filename, RaggedArray mas)
 		for (int j = 0; mas.data[i][j] != NULL; j++)
 			fscanf_s(f, "%d", &mas.data[i][j]);
 	}
-	return mas.data;
 
 	fclose(f);
 }
@@ -123,7 +122,7 @@ void writeArrayToTxtFile(const char* filename, RaggedArray mas)
 	fclose(f);
 }
 
-int** fillArrayFromBinFile(const char* filename, RaggedArray mas)
+void fillArrayFromBinFile(const char* filename, RaggedArray& mas)
 {
 	int rows = 0, cols = 0;
 
@@ -142,7 +141,6 @@ int** fillArrayFromBinFile(const char* filename, RaggedArray mas)
 
 		fread(mas.data[i], sizeof(int), cols, f);
 	}
-	return mas.data;
 
 	fclose(f);
 }
@@ -204,10 +202,10 @@ int main()
 		fillArrayRandom(mas);
 		break;
 	case 2:
-		mas.data = fillArrayFromTxtFile(filenameTxt, mas);
+		fillArrayFromTxtFile(filenameTxt, mas);
 		break;
 	case 3:
-		mas.data = fillArrayFromBinFile(filenameBin, mas);
+		fillArrayFromBinFile(filenameBin, mas);
 		break;
 	}
 
