@@ -51,7 +51,7 @@ int scanColsSize()
 	return choice;
 }
 
-int** allocateArray(RaggedArray mas)
+void allocateArray(RaggedArray& mas)
 {
 	int rows = scanRowsSize();
 	mas.data = (int**)malloc(sizeof(int*) * (rows + 1));
@@ -64,7 +64,6 @@ int** allocateArray(RaggedArray mas)
 		mas.data[i] = (int*)malloc(sizeof(int) * (cols + 1));
 		mas.data[i][cols] = NULL;
 	}
-	return mas.data;
 }
 
 void fillArrayRandom(RaggedArray mas)
@@ -198,7 +197,7 @@ int main()
 	switch (askUserScan())
 	{
 	case 1:
-		mas.data = allocateArray(mas);
+		allocateArray(mas);
 		fillArrayRandom(mas);
 		break;
 	case 2:
