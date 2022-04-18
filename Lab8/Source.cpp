@@ -47,7 +47,7 @@ int scanColsSize()
 	do {
 		printf("¹%d - ", counter);
 		scanf_s("%d", &choice);
-	} while (choice > 1000 || choice < 0);
+	} while (choice > 1000 || choice <= 0);
 	return choice;
 }
 
@@ -70,7 +70,7 @@ void fillArrayRandom(RaggedArray mas)
 {
 	for (int i = 0; mas.data[i] != NULL; i++)
 		for (int j = 0; mas.data[i][j] != NULL; j++)
-			mas.data[i][j] = rand() % 501;
+			mas.data[i][j] = rand() % 501 + 1;
 }
 
 void fillArrayFromTxtFile(const char* filename, RaggedArray& mas)
